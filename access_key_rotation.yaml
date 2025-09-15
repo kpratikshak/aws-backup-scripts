@@ -1,0 +1,92 @@
+name: Daily AWS access key rotation check
+
+on:
+  #Every day at 5:55 AM UTC (23:55 CST) '55 5 * * *'
+  schedule:
+    - cron:  '55 5 * * *'
+
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+And finally, we get to the fun part of the workflow, where we write the required steps to enable the GitHub MacOS runner to execute our python script smoothly. We need
+
+jobs:
+  AWS-key-rotation:
+    name: Quarterly AWS access key rotation
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.DEVOPS_TF_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEVOPS_TF_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3
+
+      - name: Install boto3
+        run: |
+          pip install boto3
+
+      - name: Secret Injection MAILBOX credentials
+        run: |
+          sed -i "" 's/MAILBOX_EMAIL/${{ secrets.MAILBOX_EMAIL }}/' scripts/rotate-aws-keys.py
+          sed -i "" 's/MAILBOX_PASSWORD/${{ secrets.MAILBOX_PASSWORD }}/' scripts/rotate-aws-keys.py
+          cat scripts/rotate-aws-keys.py
+
+      - name: Run AWS key rotation script
+        run: |
+          chmod +x scripts/rotate-aws-keys.py
+          python3 scripts/rotate-aws-keys.py
+The complete GitHub Workflow will look like this:
+
+name: Daily AWS access key rotation check
+
+on:
+  #Every day at 5:55 AM UTC (23:55 CST) '55 5 * * *'
+  schedule:
+    - cron:  '55 5 * * *'
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.DEVOPS_TF_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.DEVOPS_TF_AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  AWS-key-rotation:
+    name: Quarterly AWS access key rotation
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3
+
+      - name: Install boto3
+        run: |
+          pip install boto3
+
+      - name: Secret Injection MAILBOX credentials
+        run: |
+          sed -i "" 's/MAILBOX_EMAIL/${{ secrets.MAILBOX_EMAIL }}/' scripts/rotate-aws-keys.py
+          sed -i "" 's/MAILBOX_PASSWORD/${{ secrets.MAILBOX_PASSWORD }}/' scripts/rotate-aws-keys.py
+          cat scripts/rotate-aws-keys.py
+
+      - name: Run AWS key rotation script
+        run: |
+          chmod +x scripts/rotate-aws-keys.py
+          python3 scripts/rotate-aws-keys.py
