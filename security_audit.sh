@@ -1,16 +1,6 @@
 bash script to audit security logs
 #!/bin/bash
 
-echo "Starting Security Audit..."
-
-# Check for Unused Accounts
-echo -e "\nChecking for unused accounts..."
-awk -F: '{ print $1 }' /etc/passwd
-
-# Enforce Password Policies
-echo -e "\nPassword policy for user 'username':"
-sudo chage -l username
-
 # Check currently logged-in users
 echo -e "\nCurrently logged-in users:"
 w
